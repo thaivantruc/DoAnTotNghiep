@@ -13,7 +13,7 @@ HardwareSerial serialGPS(1); // use UART1
 TinyGPSPlus gps;
 #define pwkSim7600 5
 #define txGPS 32
-// #define rxGps 35
+#define rxGps 35
 //jfajfajfalfja;lfj;safjkslf
 
 // các chân của remote
