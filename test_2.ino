@@ -14,7 +14,6 @@ TinyGPSPlus gps;
 #define pwkSim7600 5
 #define txGPS 32
 #define rxGps 35
-//jfajfajfalfja;lfj;safjkslf
 
 // các chân của remote
 #define RF1 33
@@ -44,6 +43,7 @@ unsigned long millisMpu6050 = 0;
 unsigned long millisTraking = 0;
 unsigned long millisRung = 0;
 unsigned long millisTaiNan = 0;
+unsigned long currentMillis = millis();
 // unsigned long lastDataTime = millis();
 
 int flagRF4 = 0;
@@ -247,7 +247,7 @@ void loop()
 
   batTatXe(); // bật tắt xe
 
-  phatHienTeNga();
+  // phatHienTeNga();
 
   layGocMPU6050();
   Serial.println("co flagMPU6050");
@@ -256,17 +256,27 @@ void loop()
 
   if (flagTrackingXeMay == 1 )
   {
-    trackingXeMayRealtime();
-    Serial.println(millisTraking);
-    if ((unsigned long) (millis() -  millisTraking) >= (timeTrankingXeMay))
-    {
-      loa_2bip();
-      Serial.println("Stop tracking.............");
-      flagTrackingXeMay = 0;
-      flagMPU6050 = 0;
-      delay(3000);
-    }
+    // while (1)
+    // {
+      trackingXeMayRealtime();
+      // if (flagTrackingXeMay == 0)
+      // {
+      //   break;
+      // }
   }
+
+
+    //trackingXeMayRealtime();
+    // Serial.println(millisTraking);
+    // if ((unsigned long) (millis() -  millisTraking) >= (timeTrankingXeMay))
+    // {
+    //   loa_2bip();
+    //   Serial.println("Stop tracking.............");
+    //   flagTrackingXeMay = 0;
+    //   flagMPU6050 = 0;
+    //   delay(3000);
+    // }
+  
   if (flagTrackingXeMay == 0)
   {
     Serial.println("\nvao chuc nang chong trom");
@@ -400,6 +410,49 @@ void canhBaoXeBiDatTrom()
   }
 }
 
+void DoKhoangCach()
+{
+  if (flagRelayOff == 1)
+  {
+    Serial.print("\nxe khi tat may");
+    float PrevLat = 0.0;
+    float PrevLong = 0.0;
+    while (serialGPS.available())
+    {
+      if (gps.encode(serialGPS.read()))
+      {
+        if (gps.location.isValid())
+        {
+          float distance = TinyGPSPlus::distanceBetween(PrevLat, PrevLong, gps.location.lat(), gps.location.lng());
+          if ((distance >= 100.000000) || (distance <= -100.000000))
+          {
+            PrevLat = gps.location.lat();
+            PrevLong = gps.location.lng();
+            for (int i = 0; i < 3; i++)
+            {
+              // doc so dien thoai tu bo nho eeprom
+              phoneNo[i] = docDuLieuTuEEPROM(offsetPhone[i]);
+              // neu co do dai = 12 hop le thi
+              if (phoneNo[i].length() == 12)
+              {
+                loa_2bip();
+                Serial.println("Canh bao phuong tien bi dat trom");
+                // guiTinNhan("Canh bao phuong tien bi dat trom", phoneNo[i]);
+                // SimA7600C.println("ATD" + phoneNo[i] + ";");
+                // Serial.println("123456789");
+                // delay(10000);
+                // SimA7600C.println("ATH");
+              }
+            }
+            Serial.print("\ndu lieu true ghjjhffghhhff");
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
 // void canhBaoXeBiDatTrom()
 // {
 //   if (flagRelayOff == 1)
@@ -488,54 +541,12 @@ void batTatXe()
     flagRelayOff = 0;
   }
 
-  int dem_off = 0;
-  if (digitalRead(RF2) == HIGH)
-  {
-    Serial.println("789");
-    for (dem_off = 0; dem_off <= 10000; dem_off++)
-    {
-      Serial.println("123");
-      phatHienVaCham();
-      int currentInput_off = digitalRead(RF3);
-      if (currentInput_off != previousInput)
-      {
-        Serial.println("\n456");
-        digitalWrite(SW420, LOW);
-        digitalWrite(loa, LOW);
-        digitalWrite(relay, LOW);
-        flagSW420 = 0;
-        flagRelayOn = 0;
-        // flagRelayOff = 0;
-        Serial.println("\n123456789");
-        Serial.println("flag rely off");
-        Serial.println(flagRelayOff);
-        delay(1000);
-        break;
-      }
-    }
-    if (dem_off == 10001)
-    {
-      flagRelayOn = 1;
-      flagRelayOff = 0;
-      digitalWrite(loa, 1);
-      delay(10000);
-      digitalWrite(loa, 0);
-    }
-  }
-  else if (flagRelayOff == 1)
+  if (digitalRead(RF2) == HIGH || flagRelayOff == 1)
   {
     digitalWrite(relay, LOW);
-    Serial.println("flag rely off...............");
-    Serial.println(flagRelayOff);
     flagRelayOn = 0;
+    flagRelayOff = 1;
   }
-
-  // if (digitalRead(RF2) == HIGH || flagRelayOff == 1)
-  // {
-  //   digitalWrite(relay, LOW);
-  //   flagRelayOn = 0;
-  //   flagRelayOff = 1;
-  // }
 }
 
 void phatHienTeNga()
@@ -562,12 +573,6 @@ void phatHienTeNga()
           delay(10000);
           // ATH kết thúc
           SimA7600C.println("ATH");
-          while (SimA7600C.available()) 
-          {
-            char b = SimA7600C.read();
-            Serial.write(b);
-          }
-  
         }
       }
       while (1)
@@ -593,11 +598,6 @@ void phatHienTeNga()
               SimA7600C.println("ATD" + phoneNo[i] + ";");
               delay(10000);
               SimA7600C.println("ATH");
-              while (SimA7600C.available()) 
-              {
-                char c = SimA7600C.read();
-                Serial.write(c);
-              }
             }
           }
         }
@@ -939,8 +939,7 @@ void dayDuLieuLenFirebase(String data)
   SimA7600C.println("AT+HTTPACTION=1");
   for (uint32_t start = millis(); millis() - start < 3000;)
   {
-    while (!SimA7600C.available())
-      ;
+    while (!SimA7600C.available());
     String response = SimA7600C.readString();
     if (response.indexOf("+HTTPACTION:") > 0)
     {
@@ -981,6 +980,12 @@ void trackingXeMayRealtime()
     gpsData += "\"longitude\":" + longitude + "";
     gpsData += "}";
     dayDuLieuLenFirebase(gpsData);
+    Serial.println(millisTraking);
+    if ((unsigned long) (millis() -  millisTraking) >= 10000)
+    {
+      Serial.println("Done waiting. Going to next tracking");
+    }
+
   }
 }
 
@@ -1233,29 +1238,38 @@ void do_action(String phoneNumber)
       }
     }
   }
-  else if (msg == "tracking vehicle 1p")
+  // else if (msg == "tracking vehicle 1p")
+  // {
+  //   flagTrackingXeMay = 1;
+  //   millisTraking = millis();
+  //   timeTrankingXeMay = 60000;
+  //   flagMPU6050 = 1;
+  //   guiTinNhan("tracking real time 1p enable!", phoneNumber);
+  // }
+
+  // else if (msg == "tracking vehicle 5p")
+  // {
+  //   flagTrackingXeMay = 1;
+  //   millisTraking = millis();
+  //   timeTrankingXeMay = 240000;
+  //   flagMPU6050 = 1;
+  //   guiTinNhan("tracking real time 5p enable!", phoneNumber);
+  // }
+  else if (msg == "tracking vehicle")
   {
     flagTrackingXeMay = 1;
     millisTraking = millis();
-    timeTrankingXeMay = 60000;
     flagMPU6050 = 1;
-    guiTinNhan("tracking real time 1p enable!", phoneNumber);
+    guiTinNhan("tracking real time enable!", phoneNumber);
   }
 
-  else if (msg == "tracking vehicle 5p")
-  {
-    flagTrackingXeMay = 1;
-    millisTraking = millis();
-    timeTrankingXeMay = 240000;
-    flagMPU6050 = 1;
-    guiTinNhan("tracking real time 5p enable!", phoneNumber);
-  }
   else if (msg == "stop tracking vehicle")
   {
     flagTrackingXeMay = 0;
     flagMPU6050 = 0;
     guiTinNhan("stop tracking real times", phoneNumber);
   }
+
   else if (msg == "del=all")
   {
     vietDuLieuVaoEEPROM(offsetPhone[0], "");
@@ -1288,7 +1302,7 @@ void do_action(String phoneNumber)
   senderNumber = "";
   msg = "";
   tempPhone = "";
-}
+} 
 
 // ham lay goc
 void layGocMPU6050()
@@ -1331,4 +1345,3 @@ void testGPS()
     }
   }
 }
-// abcxyz
