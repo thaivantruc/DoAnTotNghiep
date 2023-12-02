@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <MPU6050_tockn.h>
 MPU6050 mpu6050(Wire);
+#include <String.h>
 
 long timer = 0;
 long timerWhileOnOff = 0;
@@ -43,7 +44,6 @@ unsigned long millisMpu6050 = 0;
 unsigned long millisTraking = 0;
 unsigned long millisRung = 0;
 unsigned long millisTaiNan = 0;
-unsigned long currentMillis = millis();
 // unsigned long lastDataTime = millis();
 
 int flagRF4 = 0;
@@ -110,6 +110,7 @@ void setup()
 
   // cua rf
   // Serial.begin(9600);
+  Serial.begin(115200); // config baud rate UART1 for debug
   pinMode(RF1, INPUT);
   pinMode(RF2, INPUT);
   pinMode(RF3, INPUT);
@@ -128,7 +129,7 @@ void setup()
   Serial.println("khoi tao GPS serial");
 
   // sim --------------------------------------------------------------------
-  Serial.begin(115200); // config baud rate UART1 for debug
+  
   Serial.println("khoi tao NodeMCU USB serial");
   SimA7600C.begin(115200);
   Serial.println("khoi taoSIMA7600C serial ");
@@ -162,12 +163,15 @@ void setup()
 
   // sim 7600C
 
-  // Đây là một lệnh AT để truy vấn trạng thái của module liên quan đến đăng ký mạng di động.
+  //Đây là một lệnh AT để truy vấn trạng thái của module liên quan đến đăng ký mạng di động.
   SimA7600C.println("AT+CFUN=1");
   delay(1000);
   SimA7600C.println("AT+CEREG=?");
+  delay(1000);
   // Lệnh AT này sử dụng để xóa tin nhắn SMS đã nhận trong bộ nhớ
   SimA7600C.println("AT+CMGD=0,4");
+  delay(1000);
+  SimA7600C.println("ATE0"); // tat che do echo
   delay(1000);
   // Lệnh này sử dụng để khôi phục module về trạng thái ban đầu (reset).
   SimA7600C.println("ATZ0"); // will restore the user setting from ME which set by ATE, ATQ, ATV,.....
@@ -175,7 +179,19 @@ void setup()
   SimA7600C.println("ATE0"); // tat che do echo
   delay(1000);
 
-  loa_2bip();
+  // SimA7600C.println("AT+CMGF=1"); //SMS text mode
+  // delay(1000);
+  // SimA7600C.println("AT+CNMI=2,1,0,0,0"); //SMS text mode 2==> lưu tin nhắn 1==> định dạng phản hồi tin nhắn là +CMTI: <mem3>,<index>.
+  // delay(1000);
+  // SimA7600C.println("AT+CMGD=1");
+  // delay(1000);
+  // // SimA7600C.println("AT+CMGL=\"ALL\"");
+  // // delay(1000);
+  // SimA7600C.println("ATE0"); // tat che do echo
+  // delay(1000);
+  // SimA7600C.println("AT&W"); //Save the user setting to ME
+  // delay(1000);
+  // loa_2bip();
   millisMpu6050 = millis();
 }
 
@@ -239,49 +255,55 @@ void loop()
   // digitalWrite(PWK_Sim, LOW);
   timXe(); // tìm xe
 
-  phatHienVaCham(); // phat hien va cham, rung lac
-  Serial.println("\nInput RF4 is HIGH");
-  Serial.println(digitalRead(RF4));
-  Serial.println("Input cam bien rung");
-  Serial.println(digitalRead(SW420));
+  // phatHienVaCham(); // phat hien va cham, rung lac
+  // Serial.println("\nInput RF4 is HIGH");
+  // Serial.println(digitalRead(RF4));
+  // Serial.println("Input cam bien rung");
+  // Serial.println(digitalRead(SW420));
 
   batTatXe(); // bật tắt xe
 
-  // phatHienTeNga();
+  phatHienTeNga();
 
   layGocMPU6050();
   Serial.println("co flagMPU6050");
   Serial.println(flagMPU6050);
   delay(1000);
 
+  // if (flagTrackingXeMay == 1 )
+  // {
+  //   trackingXeMayRealtime();
+  //   Serial.println(millisTraking);
+  //   if ((unsigned long) (millis() -  millisTraking) >= (timeTrankingXeMay))
+  //   {
+  //     loa_2bip();
+  //     Serial.println("Stop tracking.............");
+  //     flagTrackingXeMay = 0;
+  //     flagMPU6050 = 0;
+  //     delay(3000);
+  //   }
+  // }
+  // if (flagTrackingXeMay == 0)
+  // {
+  //   Serial.println("\nvao chuc nang chong trom");
+  //   Serial.println(flagRelayOff);
+  //   canhBaoXeBiDatTrom();
+  // }
+
+
   if (flagTrackingXeMay == 1 )
   {
-    // while (1)
-    // {
-      trackingXeMayRealtime();
-      // if (flagTrackingXeMay == 0)
-      // {
-      //   break;
-      // }
+    trackingXeMayRealtime();
+    flagMPU6050 = 0;
+    Serial.println("\nflag trangking xe may");
+    Serial.println(flagTrackingXeMay);
+    delay(3000);
   }
-
-
-    //trackingXeMayRealtime();
-    // Serial.println(millisTraking);
-    // if ((unsigned long) (millis() -  millisTraking) >= (timeTrankingXeMay))
-    // {
-    //   loa_2bip();
-    //   Serial.println("Stop tracking.............");
-    //   flagTrackingXeMay = 0;
-    //   flagMPU6050 = 0;
-    //   delay(3000);
-    // }
-  
   if (flagTrackingXeMay == 0)
   {
-    Serial.println("\nvao chuc nang chong trom");
-    Serial.println(flagRelayOff);
-    canhBaoXeBiDatTrom();
+    Serial.println("\nflag trangking xe may");
+    Serial.println(flagTrackingXeMay);
+    // delay(500);
   }
 
   // trackingXeMayRealtime();
@@ -295,6 +317,13 @@ void loop()
   }
 }
 
+
+
+void trong()
+{
+  Serial.println("trong.............");
+  int trong = 0;
+}
 // cua khoi rf dieu khien
 int previousInput = 0; // Biến lưu trạng thái trước đó của INPUT_RF3
 
@@ -410,49 +439,6 @@ void canhBaoXeBiDatTrom()
   }
 }
 
-void DoKhoangCach()
-{
-  if (flagRelayOff == 1)
-  {
-    Serial.print("\nxe khi tat may");
-    float PrevLat = 0.0;
-    float PrevLong = 0.0;
-    while (serialGPS.available())
-    {
-      if (gps.encode(serialGPS.read()))
-      {
-        if (gps.location.isValid())
-        {
-          float distance = TinyGPSPlus::distanceBetween(PrevLat, PrevLong, gps.location.lat(), gps.location.lng());
-          if ((distance >= 100.000000) || (distance <= -100.000000))
-          {
-            PrevLat = gps.location.lat();
-            PrevLong = gps.location.lng();
-            for (int i = 0; i < 3; i++)
-            {
-              // doc so dien thoai tu bo nho eeprom
-              phoneNo[i] = docDuLieuTuEEPROM(offsetPhone[i]);
-              // neu co do dai = 12 hop le thi
-              if (phoneNo[i].length() == 12)
-              {
-                loa_2bip();
-                Serial.println("Canh bao phuong tien bi dat trom");
-                // guiTinNhan("Canh bao phuong tien bi dat trom", phoneNo[i]);
-                // SimA7600C.println("ATD" + phoneNo[i] + ";");
-                // Serial.println("123456789");
-                // delay(10000);
-                // SimA7600C.println("ATH");
-              }
-            }
-            Serial.print("\ndu lieu true ghjjhffghhhff");
-            break;
-          }
-        }
-      }
-    }
-  }
-}
-
 // void canhBaoXeBiDatTrom()
 // {
 //   if (flagRelayOff == 1)
@@ -541,12 +527,54 @@ void batTatXe()
     flagRelayOff = 0;
   }
 
-  if (digitalRead(RF2) == HIGH || flagRelayOff == 1)
+  int dem_off = 0;
+  if (digitalRead(RF2) == HIGH)
+  {
+    Serial.println("789");
+    for (dem_off = 0; dem_off <= 10000; dem_off++)
+    {
+      Serial.println("123");
+      phatHienVaCham();
+      int currentInput_off = digitalRead(RF3);
+      if (currentInput_off != previousInput)
+      {
+        Serial.println("\n456");
+        digitalWrite(SW420, LOW);
+        digitalWrite(loa, LOW);
+        digitalWrite(relay, LOW);
+        flagSW420 = 0;
+        flagRelayOn = 0;
+        // flagRelayOff = 0;
+        Serial.println("\n123456789");
+        Serial.println("flag rely off");
+        Serial.println(flagRelayOff);
+        delay(1000);
+        break;
+      }
+    }
+    if (dem_off == 10001)
+    {
+      flagRelayOn = 1;
+      flagRelayOff = 0;
+      digitalWrite(loa, 1);
+      delay(10000);
+      digitalWrite(loa, 0);
+    }
+  }
+  else if (flagRelayOff == 1)
   {
     digitalWrite(relay, LOW);
+    Serial.println("flag rely off...............");
+    Serial.println(flagRelayOff);
     flagRelayOn = 0;
-    flagRelayOff = 1;
   }
+
+  // if (digitalRead(RF2) == HIGH || flagRelayOff == 1)
+  // {
+  //   digitalWrite(relay, LOW);
+  //   flagRelayOn = 0;
+  //   flagRelayOff = 1;
+  // }
 }
 
 void phatHienTeNga()
@@ -573,6 +601,12 @@ void phatHienTeNga()
           delay(10000);
           // ATH kết thúc
           SimA7600C.println("ATH");
+          while (SimA7600C.available()) 
+          {
+            char b = SimA7600C.read();
+            Serial.write(b);
+          }
+  
         }
       }
       while (1)
@@ -598,6 +632,11 @@ void phatHienTeNga()
               SimA7600C.println("ATD" + phoneNo[i] + ";");
               delay(10000);
               SimA7600C.println("ATH");
+              while (SimA7600C.available()) 
+              {
+                char c = SimA7600C.read();
+                Serial.write(c);
+              }
             }
           }
         }
@@ -717,9 +756,11 @@ String docDuLieuTuEEPROM(int addrOffset)
   return String(data);
 }
 
+String substring;
 void xuLiTinNhan(String buff)
 {
-  // Serial.println("buff dau tien");
+  Serial.println("xu li tin nhan");
+  Serial.println("buff dau tien");
   Serial.println(buff); // In ra chuỗi `buff` trên cổng Serial (để mục đích gỡ lỗi).
 
   unsigned int len, index; // Khai báo hai biến kiểu unsigned int: len và index.
@@ -727,41 +768,83 @@ void xuLiTinNhan(String buff)
   index = buff.indexOf("\r"); // Tìm vị trí đầu tiên của dấu xuống dòng '\r' trong chuỗi `buff`.
   buff.remove(0, index + 2);  // Loại bỏ phần "AT Command" và ký tự xuống dòng từ `buff`.
 
-  // Serial.println("sau khi loai bo AT");
-  // Serial.println(buff);
+  Serial.println("sau khi loai bo AT");
+  Serial.println(buff);
   buff.trim(); // Loại bỏ các khoảng trắng ở đầu và cuối chuỗi.
-  // Serial.println("sau khi loai bo khoang trang");
-  // Serial.println(buff);
+  Serial.println("sau khi loai bo khoang trang");
+  Serial.println(buff);
+
+  // xu li rieng cho stop
+  Serial.println("sao chep buff");
+  String buff_2 = buff;
+  Serial.println(buff_2);
+
+  // xem do dai chuoi 
+  Serial.println("do dai chuoi buff_2");
+  int length_buff_2 = buff_2.length();
+  // Hiển thị độ dài của chuỗi
+  Serial.println(length_buff_2);
+
+  // cat chuoi
+  Serial.println("cat chuoi");
+  // Lấy 5 ký tự cuối cùng của chuỗi
+  String buff_2_cut =  buff_2.substring(buff_2.length() - 13);
+  // In chuỗi
+  Serial.println(buff_2_cut);
+
 
   // Kiểm tra nếu chuỗi `buff` không phải là "OK".
   if (buff != "OK")
   {
+    Serial.println("xu li tin 6 ==============");
     index = buff.indexOf(":");             // Tìm vị trí đầu tiên của dấu hai chấm ':' trong chuỗi `buff`.
     String cmd = buff.substring(0, index); // Trích xuất phần từ đầu đến dấu hai chấm ':' và lưu vào biến `cmd`.
-    // Serial.println("bien cmd");
-    // Serial.println(cmd);
+    Serial.println("bien cmd");
+    Serial.println(cmd);
     cmd.trim(); // Loại bỏ các khoảng trắng ở đầu và cuối chuỗi `cmd`.
-    // Serial.println("Loại bỏ các khoảng trắng ở đầu và cuối chuỗi `cmd");
-    // Serial.println(cmd);
+    Serial.println("Loại bỏ các khoảng trắng ở đầu và cuối chuỗi `cmd");
+    Serial.println(cmd);
     buff.remove(0, index + 2); // Loại bỏ phần đã trích xuất và ký tự hai chấm ':' từ `buff`.
-    // Serial.println(" Loại bỏ phần đã trích xuất và ký tự hai chấm ':' từ `buff`");
-    // Serial.println(buff);
+    Serial.println(" Loại bỏ phần đã trích xuất và ký tự hai chấm ':' từ `buff`");
+    Serial.println(buff);
 
-    // Serial.println("--------------------");
-    // Serial.println(cmd);
-    // Serial.println("--------------------");
+    Serial.println("--------------------");
+    Serial.println(cmd);
+    Serial.println("--------------------");
 
-    if (cmd == "+CMTI")
+    // String cmd2 = cmd;
+    // // Lấy 5 ký tự cuối cùng của chuỗi
+    // String substring =  cmd2.substring(cmd2.length() - 5);
+    // // In chuỗi
+    // Serial.println(substring);
+
+    Serial.println("do dai chuoi");
+    // Xem độ dài của chuỗi
+    int length = cmd.length();
+    // Hiển thị độ dài của chuỗi
+    Serial.println(length);
+
+    // if(length > 10)
+    // {
+    //   Serial.println("cat chuoi");
+    //   // Lấy 5 ký tự cuối cùng của chuỗi
+    //   substring =  cmd.substring(cmd.length() - 5);
+    //   // In chuỗi
+    //   Serial.println(substring);
+    // }
+
+    if (cmd == "+CMTI" || substring == "+CMTI")
     {
+      Serial.println("xu li tin 1 ==============");
       flagNgatMpu6065 = 1;
       // get newly arrived memory location and store it in temp
       //  Lấy vị trí bộ nhớ mới nhận và lưu vào biến `temp`.
       index = buff.indexOf(",");
       IndexSms = index; // Gán giá trị index cho biến IndexSms.
-      // Serial.println("gia tri bien index");
-      // Serial.println(index);
+      Serial.println("gia tri bien index");
+      Serial.println(index);
       String temp = buff.substring(index + 1, buff.length()); // Trích xuất phần sau dấu phẩy ',' và lưu vào `temp`.
-      // Serial.println("Trích xuất phần sau dấu phẩy ',' và lưu vào `temp`.");
+      Serial.println("Trích xuất phần sau dấu phẩy ',' và lưu vào `temp`.");
       temp = "AT+CMGR=" + temp + "\r"; // Tạo lệnh AT để lấy tin nhắn tại vị trí bộ nhớ `temp`.
       // get the message stored at memory location "temp"
       SimA7600C.println(temp); // Gửi lệnh AT đến SimA7600C.
@@ -770,6 +853,7 @@ void xuLiTinNhan(String buff)
 
     else if (cmd == "+CMGR")
     {
+      Serial.println("xu li tin 2 ==============");
       // Serial.println("vao hamf else if");
       extract_sms(buff); // Gọi hàm `extract_sms` để trích xuất thông tin tin nhắn từ `buff`.
       // Serial.println("testttttttttttttttttt");
@@ -777,6 +861,7 @@ void xuLiTinNhan(String buff)
       SimA7600C.println("AT+CMGD=" + IndexSms);
       if (msg.equals("r") && flagDangKy == 0)
       {
+        Serial.println("xu li tin 3 ==============");
         // && phoneNo[0].length() == 12
         vietDuLieuVaoEEPROM(offsetPhone[0], senderNumber); // Lưu số điện thoại vào EEPROM.
         phoneNo[0] = senderNumber;                         // Gán số điện thoại vào mảng `phoneNo`.
@@ -788,6 +873,83 @@ void xuLiTinNhan(String buff)
 
       if (comparePhone(senderNumber))
       {
+        Serial.println("xu li tin 4 ==============");
+        Serial.println("vao do action");
+        do_action(senderNumber);
+        flagNgatMpu6065 = 0;
+      }
+      else
+      {
+        guiTinNhan("so dien thoai chua duoc dang ki", senderNumber);
+      }
+    }
+  }
+
+  // xu li cho stop tracking
+  if (buff_2_cut != "OK")
+  {
+    Serial.println("xu li tin 6 ==============");
+    index = buff_2_cut.indexOf(":");             // Tìm vị trí đầu tiên của dấu hai chấm ':' trong chuỗi `buff`.
+    String cmd2 = buff_2_cut.substring(0, index); // Trích xuất phần từ đầu đến dấu hai chấm ':' và lưu vào biến `cmd`.
+    Serial.println("bien cmd2");
+    Serial.println(cmd2);
+    cmd2.trim(); // Loại bỏ các khoảng trắng ở đầu và cuối chuỗi `cmd`.
+    Serial.println("Loại bỏ các khoảng trắng ở đầu và cuối chuỗi `cmd2");
+    Serial.println(cmd2);
+    buff_2_cut.remove(0, index + 2); // Loại bỏ phần đã trích xuất và ký tự hai chấm ':' từ `buff`.
+    Serial.println(" Loại bỏ phần đã trích xuất và ký tự hai chấm ':' từ `buff`");
+    Serial.println(buff_2_cut);
+
+    Serial.println("--------------------");
+    Serial.println(cmd2);
+    Serial.println("--------------------");
+
+    Serial.println("do dai chuoi");
+    // Xem độ dài của chuỗi
+    int length_2 = cmd2.length();
+    // Hiển thị độ dài của chuỗi
+    Serial.println(length_2);
+
+    if (cmd2== "+CMTI")
+    {
+      Serial.println("xu li tin 1 ==============");
+      flagNgatMpu6065 = 1;
+      // get newly arrived memory location and store it in temp
+      //  Lấy vị trí bộ nhớ mới nhận và lưu vào biến `temp`.
+      index = buff_2_cut.indexOf(",");
+      IndexSms = index; // Gán giá trị index cho biến IndexSms.
+      Serial.println("gia tri bien index");
+      Serial.println(index);
+      String temp_2 = buff_2_cut.substring(index + 1, buff_2_cut.length()); // Trích xuất phần sau dấu phẩy ',' và lưu vào `temp`.
+      Serial.println("Trích xuất phần sau dấu phẩy ',' và lưu vào `temp_2`.");
+      temp_2 = "AT+CMGR=" + temp_2 + "\r"; // Tạo lệnh AT để lấy tin nhắn tại vị trí bộ nhớ `temp`.
+      // get the message stored at memory location "temp"
+      SimA7600C.println(temp_2); // Gửi lệnh AT đến SimA7600C.
+      Serial.println("....................................."); // In ra dấu chấm để gỡ lỗi.
+    }
+
+    else if (cmd2 == "+CMGR")
+    {
+      Serial.println("xu li tin 2 ==============");
+      // Serial.println("vao hamf else if");
+      extract_sms(buff_2_cut); // Gọi hàm `extract_sms` để trích xuất thông tin tin nhắn từ `buff`.
+      // Gửi lệnh AT để xóa tin nhắn tại vị trí `IndexSms`.
+      SimA7600C.println("AT+CMGD=" + IndexSms);
+      if (msg.equals("r") && flagDangKy == 0)
+      {
+        Serial.println("xu li tin 3 ==============");
+        // && phoneNo[0].length() == 12
+        vietDuLieuVaoEEPROM(offsetPhone[0], senderNumber); // Lưu số điện thoại vào EEPROM.
+        phoneNo[0] = senderNumber;                         // Gán số điện thoại vào mảng `phoneNo`.
+        String text = "Number is Registered: ";
+        text = text + senderNumber; // Gửi phản hồi về số điện thoại đã đăng ký.
+        guiTinNhan("Number is Registered", senderNumber);
+        flagDangKy = 1;
+      }
+
+      if (comparePhone(senderNumber))
+      {
+        Serial.println("xu li tin 4 ==============");
         Serial.println("vao do action");
         do_action(senderNumber);
         flagNgatMpu6065 = 0;
@@ -800,7 +962,7 @@ void xuLiTinNhan(String buff)
   }
   else
   {
-    // The result of AT Command is "OK"
+    Serial.println("xu li tin 123 ==============");
   }
 }
 
@@ -917,29 +1079,42 @@ void guiViTri(String phoneNumber)
 
 void dayDuLieuLenFirebase(String data)
 {
+  unsigned long startTime = 0;
   // Start HTTP connection
   SimA7600C.println("AT+HTTPINIT");
-  delay(500);
+  // startTime = millis();
+  while (millis() - startTime < 500);
+
   // Set the HTTP URL - Firebase URL and FIREBASE SECRET
   SimA7600C.println("AT+HTTPPARA=\"URL\"," + firebaseUrl + ".json?auth=" + firebaseScret);
-  // delay(500);
+  startTime = millis();
+  while (millis() - startTime < 500);
+
   // Setting up content type
   SimA7600C.println("AT+HTTPPARA=\"POST\",\"application/json\"");
-  // waitResponse();
-  delay(500);
+  startTime = millis();
+  while (millis() - startTime < 500);
+
   // Setting up Data Size
-  //+HTTPACTION: 1,601,0 - error occurs if data length is not correct
+  // +HTTPACTION: 1,601,0 - error occurs if data length is not correct
   SimA7600C.println("AT+HTTPDATA=" + String(data.length()) + ",10000");
-  delay(500);
+  startTime = millis();
+  while (millis() - startTime < 500);
+
   // Sending Data
   SimA7600C.println(data);
-  // waitResponse();
-  delay(500);
+  startTime = millis();
+  while (millis() - startTime < 500);
+
   // Sending HTTP POST request
   SimA7600C.println("AT+HTTPACTION=1");
   for (uint32_t start = millis(); millis() - start < 3000;)
   {
-    while (!SimA7600C.available());
+    while (!SimA7600C.available())
+    {
+      Serial.println("sim chua san sang");
+      // xuLiTinNhan(SimA7600C.readString());
+    }
     String response = SimA7600C.readString();
     if (response.indexOf("+HTTPACTION:") > 0)
     {
@@ -947,9 +1122,13 @@ void dayDuLieuLenFirebase(String data)
       break;
     }
   }
+
   // Stop HTTP connection
   SimA7600C.println("AT+HTTPTERM");
-  delay(500);
+  startTime = millis();
+  while (millis() - startTime < 500);
+
+  trong();
 }
 
 void trackingXeMayRealtime()
@@ -980,12 +1159,6 @@ void trackingXeMayRealtime()
     gpsData += "\"longitude\":" + longitude + "";
     gpsData += "}";
     dayDuLieuLenFirebase(gpsData);
-    Serial.println(millisTraking);
-    if ((unsigned long) (millis() -  millisTraking) >= 10000)
-    {
-      Serial.println("Done waiting. Going to next tracking");
-    }
-
   }
 }
 
@@ -1238,29 +1411,29 @@ void do_action(String phoneNumber)
       }
     }
   }
-  // else if (msg == "tracking vehicle 1p")
-  // {
-  //   flagTrackingXeMay = 1;
-  //   millisTraking = millis();
-  //   timeTrankingXeMay = 60000;
-  //   flagMPU6050 = 1;
-  //   guiTinNhan("tracking real time 1p enable!", phoneNumber);
-  // }
-
-  // else if (msg == "tracking vehicle 5p")
-  // {
-  //   flagTrackingXeMay = 1;
-  //   millisTraking = millis();
-  //   timeTrankingXeMay = 240000;
-  //   flagMPU6050 = 1;
-  //   guiTinNhan("tracking real time 5p enable!", phoneNumber);
-  // }
-  else if (msg == "tracking vehicle")
+  else if (msg == "tracking vehicle 1p")
   {
     flagTrackingXeMay = 1;
     millisTraking = millis();
+    timeTrankingXeMay = 60000;
     flagMPU6050 = 1;
-    guiTinNhan("tracking real time enable!", phoneNumber);
+    guiTinNhan("tracking real time 1p enable!", phoneNumber);
+  }
+
+  else if (msg == "tracking vehicle 5p")
+  {
+    flagTrackingXeMay = 1;
+    millisTraking = millis();
+    timeTrankingXeMay = 240000;
+    flagMPU6050 = 1;
+    guiTinNhan("tracking real time 5p enable!", phoneNumber);
+  }
+
+  else if (msg == "tracking vehicle")
+  {
+    flagTrackingXeMay = 1;
+    flagMPU6050 = 1;
+    guiTinNhan("tracking real time", phoneNumber);
   }
 
   else if (msg == "stop tracking vehicle")
@@ -1269,7 +1442,6 @@ void do_action(String phoneNumber)
     flagMPU6050 = 0;
     guiTinNhan("stop tracking real times", phoneNumber);
   }
-
   else if (msg == "del=all")
   {
     vietDuLieuVaoEEPROM(offsetPhone[0], "");
@@ -1302,7 +1474,7 @@ void do_action(String phoneNumber)
   senderNumber = "";
   msg = "";
   tempPhone = "";
-} 
+}
 
 // ham lay goc
 void layGocMPU6050()
