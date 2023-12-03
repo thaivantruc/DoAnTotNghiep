@@ -44,6 +44,7 @@ unsigned long millisMpu6050 = 0;
 unsigned long millisTraking = 0;
 unsigned long millisRung = 0;
 unsigned long millisTaiNan = 0;
+unsigned long millisTracking = 0;
 // unsigned long lastDataTime = millis();
 
 int flagRF4 = 0;
@@ -289,7 +290,7 @@ void loop()
   //   Serial.println(flagRelayOff);
   //   canhBaoXeBiDatTrom();
   // }
-
+  
 
   if (flagTrackingXeMay == 1 )
   {
@@ -297,8 +298,11 @@ void loop()
     flagMPU6050 = 0;
     Serial.println("\nflag trangking xe may");
     Serial.println(flagTrackingXeMay);
-    delay(3000);
+    while (millis() - millisTracking < 5000);
+    Serial.println("Done waiting 5s. Tracking vehicle again");
+    //delay(3000);
   }
+
   if (flagTrackingXeMay == 0)
   {
     Serial.println("\nflag trangking xe may");
@@ -1084,27 +1088,32 @@ void dayDuLieuLenFirebase(String data)
   SimA7600C.println("AT+HTTPINIT");
   // startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("postFB1");
 
   // Set the HTTP URL - Firebase URL and FIREBASE SECRET
   SimA7600C.println("AT+HTTPPARA=\"URL\"," + firebaseUrl + ".json?auth=" + firebaseScret);
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("postFB2");
 
   // Setting up content type
   SimA7600C.println("AT+HTTPPARA=\"POST\",\"application/json\"");
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("postFB3");
 
   // Setting up Data Size
   // +HTTPACTION: 1,601,0 - error occurs if data length is not correct
   SimA7600C.println("AT+HTTPDATA=" + String(data.length()) + ",10000");
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("postFB4");
 
   // Sending Data
   SimA7600C.println(data);
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("postFB5");
 
   // Sending HTTP POST request
   SimA7600C.println("AT+HTTPACTION=1");
@@ -1127,8 +1136,9 @@ void dayDuLieuLenFirebase(String data)
   SimA7600C.println("AT+HTTPTERM");
   startTime = millis();
   while (millis() - startTime < 500);
-
+  Serial.println("postFB6");
   trong();
+  millisTracking = millis();
 }
 
 void trackingXeMayRealtime()
