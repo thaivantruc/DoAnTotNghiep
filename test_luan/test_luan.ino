@@ -290,6 +290,8 @@ void loop()
   //   canhBaoXeBiDatTrom();
   // }
 
+  // unsigned long millisTracking = 0;
+  // millisTracking = millis();
 
   if (flagTrackingXeMay == 1 )
   {
@@ -297,8 +299,15 @@ void loop()
     flagMPU6050 = 0;
     Serial.println("\nflag trangking xe may");
     Serial.println(flagTrackingXeMay);
-    delay(3000);
+    unsigned long millisTracking = 0;
+    millisTracking = millis();
+    if ( (unsigned long)(millis()-millisTracking) >= (5000) )
+    {
+      Serial.println("Done waiting 5s. Continue tracking!!")
+    }
+    // delay(3000);
   }
+
   if (flagTrackingXeMay == 0)
   {
     Serial.println("\nflag trangking xe may");
@@ -1084,27 +1093,32 @@ void dayDuLieuLenFirebase(String data)
   SimA7600C.println("AT+HTTPINIT");
   // startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("post_FB1");
 
   // Set the HTTP URL - Firebase URL and FIREBASE SECRET
   SimA7600C.println("AT+HTTPPARA=\"URL\"," + firebaseUrl + ".json?auth=" + firebaseScret);
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("post_FB2");
 
   // Setting up content type
   SimA7600C.println("AT+HTTPPARA=\"POST\",\"application/json\"");
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("post_FB3");
 
   // Setting up Data Size
   // +HTTPACTION: 1,601,0 - error occurs if data length is not correct
   SimA7600C.println("AT+HTTPDATA=" + String(data.length()) + ",10000");
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("post_FB4");
 
   // Sending Data
   SimA7600C.println(data);
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("post_FB5");
 
   // Sending HTTP POST request
   SimA7600C.println("AT+HTTPACTION=1");
@@ -1127,6 +1141,7 @@ void dayDuLieuLenFirebase(String data)
   SimA7600C.println("AT+HTTPTERM");
   startTime = millis();
   while (millis() - startTime < 500);
+  Serial.println("post_FB6");
 
   trong();
 }
